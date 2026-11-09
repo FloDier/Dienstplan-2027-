@@ -24,6 +24,6 @@ Die Firebase-Web-Config ist kein Geheimnis: Sie steht in jeder Web-App im Klarte
 
 ## Hinweise
 
-- **Kein Login:** Jeder mit dem Link kann Einträge ändern. Das entspricht der bisherigen App.
+- **Hausl-PIN:** Hausl-Dashboard und „Hausl AN“ verlangen den PIN (`ESSEN_HAUSL_PIN` oben in `index.html`). Pro Gerät einmal je Sitzung. Der PIN steht im Seitenquelltext – er schützt vor Versehen, nicht vor Absicht.
 - **Kosten:** Das Gratis-Kontingent (50.000 Lesezugriffe pro Tag) reicht für eine Wache bei Weitem.
 - **Namen:** Die Namen der Kollegen stehen wie bisher fest im Code.
