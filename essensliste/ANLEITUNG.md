@@ -17,7 +17,7 @@ Neu ist ein gemeinsamer Speicher:
 3. Unter Firestore → **Regeln** den Inhalt von `firestore.rules` einfügen und veröffentlichen.
 4. Optional, aber empfohlen: Firestore → **TTL** → Richtlinie für die Sammlung `essensliste`, Feld `expireAt`. Dann löscht Google die Daten auch dann, wenn niemand die App öffnet (Datenschutz).
 5. Projekteinstellungen → „Meine Apps“ → Web-App (`</>`) hinzufügen. Die angezeigte `firebaseConfig` kopieren.
-6. In `index.html` oben bei `window.ESSEN_FIREBASE_CONFIG = null;` das `null` durch die Config ersetzen. Ein Beispiel steht direkt darunter.
+6. In `index.html` oben bei `window.ESSEN_FIREBASE_CONFIG` die Config eintragen (für das Projekt `essensliste-wa2a` bereits erledigt).
 7. `index.html` ins Repo `Essensliste-WA2A-` kopieren. GitHub Pages aktualisiert sich nach etwa einer Minute.
 
 Die Firebase-Web-Config ist kein Geheimnis: Sie steht in jeder Web-App im Klartext. Den Schutz übernehmen die Regeln in `firestore.rules`.
