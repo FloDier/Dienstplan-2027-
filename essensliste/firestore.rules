@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Nur das eine Listen-Dokument der Brotzeit Liste ist erreichbar, alles andere gesperrt.
+    match /essensliste/wa2a {
+      allow read: if true;
+      allow delete: if true;
+      allow create, update: if request.resource.size() < 20
+        && request.resource.data.keys().hasOnly(['createdAt','expireAt','orders','anwesend',
+             'abendessenText','abendessenAktiv','brotzeitPreis','abendessenPreis','paypalEmail']);
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
