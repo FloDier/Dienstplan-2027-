@@ -4,9 +4,10 @@
 Neu ist ein gemeinsamer Speicher:
 
 - Alle Kollegen sehen dieselbe Liste in Echtzeit: Bestellungen, Anwesenheit, Abendessen, Preise, PayPal und „bezahlt“.
-- Die Liste wird **26 Stunden nach dem ersten Eintrag automatisch gelöscht**.
+- Die Liste beginnt um **06:20** an dem Tag, an dem der erste Kollege einträgt, und wird **26 Stunden später gelöscht** (Folgetag 08:20).
   - So kann man nach der Schicht noch sehen, wer nicht bezahlt hat.
   - Der nächste Dienst startet mit einer leeren Liste.
+  - Uhrzeit und Dauer stehen oben in `index.html` (`ESSEN_START`, `ESSEN_LEBENSDAUER_STUNDEN`).
 - Ohne Firebase-Einrichtung läuft die App im **lokalen Modus**: Die Daten bleiben dann nur auf dem jeweiligen Gerät.
 
 ## Einrichtung (einmalig, ca. 10 Minuten)

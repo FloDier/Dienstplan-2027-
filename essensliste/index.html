@@ -24,7 +24,8 @@
       appId: "1:123456789:web:abc123"
     };
     */
-    window.ESSEN_LEBENSDAUER_STUNDEN = 26;          // Liste wird 26 h nach dem ersten Eintrag gelöscht
+    window.ESSEN_START = "06:20";                    // Beginn des Eintragens (Papierliste ab 06:20)
+    window.ESSEN_LEBENSDAUER_STUNDEN = 26;          // Liste wird 26 h nach Beginn (06:20) gelöscht → am Folgetag 08:20
     window.ESSEN_DOKUMENT = "essensliste/wa2a";      // Speicherort in Firestore
     /* ========================================================= */
   </script>
@@ -45,6 +46,12 @@
   function clone(v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); }
   function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
   function emit(k) { (subs[k] || []).slice().forEach(function (f) { f(state[k]); }); }
+  // Beginn der Liste = ESSEN_START (06:20) am Tag des ersten Eintrags
+  function startAnchor() {
+    var hm = String(window.ESSEN_START || "06:20").split(":");
+    var d = new Date(); d.setHours(+hm[0] || 0, +hm[1] || 0, 0, 0);
+    return d.getTime();
+  }
   function expired(ts) { return ts != null && Date.now() - ts > TTL; }
 
   function resetAll() {
@@ -86,7 +93,7 @@
     } catch (e) {}
   }
   function lsSave() {
-    if (createdAt == null) createdAt = Date.now();
+    if (createdAt == null || expired(createdAt)) createdAt = startAnchor();
     var data = {}; Object.keys(defaults).forEach(function (k) { data[k] = state[k]; });
     try { localStorage.setItem(LS_KEY, JSON.stringify({ createdAt: createdAt, data: data })); } catch (e) {}
   }
@@ -114,7 +121,7 @@
     var fresh = createdAt == null || expired(createdAt);
     if (fresh) {
       // neue Liste anlegen (überschreibt alte/abgelaufene komplett)
-      createdAt = Date.now();
+      createdAt = startAnchor();
       var data = { createdAt: createdAt, expireAt: fb.Timestamp.fromMillis(createdAt + TTL) };
       Object.keys(defaults).forEach(function (k) { data[k] = state[k]; });
       fb.setDoc(ref, data).catch(onErr);
