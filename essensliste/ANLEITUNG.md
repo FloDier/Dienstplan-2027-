@@ -4,6 +4,7 @@
 Neu ist ein gemeinsamer Speicher:
 
 - Alle Kollegen sehen dieselbe Liste in Echtzeit: Bestellungen, Anwesenheit, Abendessen, Preise, PayPal und „bezahlt“.
+- Preise: Der Hausl trägt im Dashboard für jede Person einen eigenen Brotzeit-Betrag ein; der Abendessen-Preis gilt für alle, die Ja sagen. Bis dahin steht überall 0,00 €.
 - Die Liste beginnt um **06:20** an dem Tag, an dem der erste Kollege einträgt, und wird **26 Stunden später gelöscht** (Folgetag 08:20).
   - So kann man nach der Schicht noch sehen, wer nicht bezahlt hat.
   - Der nächste Dienst startet mit einer leeren Liste.
@@ -24,6 +25,6 @@ Die Firebase-Web-Config ist kein Geheimnis: Sie steht in jeder Web-App im Klarte
 
 ## Hinweise
 
-- **Hausl-PIN:** Hausl-Dashboard und „Hausl AN“ verlangen den PIN (`ESSEN_HAUSL_PIN` oben in `index.html`). Pro Gerät einmal je Sitzung. Der PIN steht im Seitenquelltext – er schützt vor Versehen, nicht vor Absicht.
+- **Hausl-PIN:** Hausl-Dashboard und „Hausl AN“ verlangen den PIN (`ESSEN_HAUSL_PIN` oben in `index.html`). Abfrage bei jedem Öffnen. Der PIN steht im Seitenquelltext – er schützt vor Versehen, nicht vor Absicht.
 - **Kosten:** Das Gratis-Kontingent (50.000 Lesezugriffe pro Tag) reicht für eine Wache bei Weitem.
 - **Namen:** Die Namen der Kollegen stehen wie bisher fest im Code.
