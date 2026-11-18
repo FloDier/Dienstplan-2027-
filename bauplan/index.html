@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bauplan">
+<meta name="theme-color" content="#1f2933">
+<title>Bauplan App</title>
+<style>
+:root {
+  --bg: #f4f1ea;
+  --card: #ffffff;
+  --ink: #1f2933;
+  --muted: #6b7280;
+  --line: #d9d3c7;
+  --wood: #e8c99b;
+  --wood-dark: #b98a4e;
+  --accent: #c2410c;
+  --accent-soft: #fde7d9;
+  --warn-bg: #fff4d6;
+  --warn-ink: #7a4b00;
+  --err-bg: #fde2e2;
+  --err-ink: #8a1c1c;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--ink); color: #fff;
+  padding: calc(env(safe-area-inset-top) + 10px) 14px 0;
+}
+header h1 { margin: 0 0 8px; font-size: 19px; letter-spacing: .2px; }
+header h1 span { color: #fbbf77; }
+nav.tabs { display: flex; gap: 4px; overflow-x: auto; }
+nav.tabs button {
+  flex: 1 0 auto; border: 0; background: transparent; color: #cbd5e1;
+  padding: 9px 12px; font-size: 14px; font-weight: 600; border-radius: 10px 10px 0 0; cursor: pointer;
+}
+nav.tabs button.active { background: var(--bg); color: var(--ink); }
+main { max-width: 1100px; margin: 0 auto; padding: 14px; }
+.tool { display: none; }
+.tool.active { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.tool.active > * { min-width: 0; }
+@media (min-width: 900px) {
+  .tool.active { grid-template-columns: 340px minmax(0, 1fr); align-items: start; }
+  .inputs { position: sticky; top: 92px; max-height: calc(100vh - 110px); overflow: auto; }
+}
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.inputs h2, .out h2 { margin: 0 0 10px; font-size: 17px; }
+.out h3 { margin: 22px 0 8px; font-size: 16px; border-bottom: 2px solid var(--accent); padding-bottom: 4px; }
+fieldset { border: 0; padding: 0; margin: 0 0 12px; }
+legend { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; color: var(--accent); margin-bottom: 6px; }
+.field { display: grid; grid-template-columns: minmax(0, 1fr) 120px; align-items: center; gap: 8px; margin-bottom: 7px; }
+.field label { font-size: 14px; }
+.field small { display: block; color: var(--muted); font-size: 12px; line-height: 1.3; }
+.field .ctl { display: flex; align-items: center; gap: 4px; }
+.field input[type=number], .field select {
+  width: 100%; font-size: 16px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fffdf8;
+}
+.field select { grid-column: auto; }
+.field.wide { grid-template-columns: 1fr; }
+.field .unit { color: var(--muted); font-size: 12px; min-width: 22px; }
+button.btn {
+  border: 0; background: var(--accent); color: #fff; font-weight: 700; font-size: 15px;
+  padding: 11px 14px; border-radius: 10px; cursor: pointer; width: 100%;
+}
+button.btn.sec { background: #e5e0d4; color: var(--ink); }
+button.small { padding: 6px 9px; font-size: 13px; width: auto; }
+.summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.kpi { background: var(--accent-soft); border-radius: 10px; padding: 8px 10px; }
+.kpi b { display: block; font-size: 18px; }
+.kpi span { font-size: 12px; color: var(--muted); }
+.msg { border-radius: 10px; padding: 8px 10px; margin: 8px 0; font-size: 14px; }
+.msg.warn { background: var(--warn-bg); color: var(--warn-ink); }
+.msg.err { background: var(--err-bg); color: var(--err-ink); font-weight: 600; }
+.msg.info { background: #e6f0fa; color: #173a5e; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: #f1ece2; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; }
+td.n, th.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tablewrap { overflow-x: auto; }
+ol.steps { padding-left: 22px; margin: 0; }
+ol.steps li { margin-bottom: 8px; }
+figure.drw { margin: 10px 0; }
+figure.drw svg { width: 100%; height: auto; max-height: 70vh; background: #fffdf8; border: 1px solid var(--line); border-radius: 10px; }
+figure.drw figcaption { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.drw svg * { vector-effect: non-scaling-stroke; }
+.drw .wood { fill: var(--wood); stroke: #6b4a1f; stroke-width: 1; }
+.drw .wood2 { fill: var(--wood-dark); stroke: #4a3213; stroke-width: 1; }
+.drw .box { fill: #eef3f7; stroke: #5b6b7a; stroke-width: 1; }
+.drw .boxrim { fill: #d4dee8; stroke: #5b6b7a; stroke-width: 1; }
+.drw .ghost { fill: none; stroke: #9aa3ad; stroke-width: 1; stroke-dasharray: 4 3; }
+.drw .wall { fill: #ddd6c9; stroke: none; }
+.drw .dim line { stroke: var(--accent); stroke-width: 1; }
+.drw .dim text { fill: var(--accent); font-weight: 600; }
+.drw text { font-family: system-ui, sans-serif; fill: var(--ink); }
+.drw .lbl { fill: #374151; }
+.drw .hole { fill: #fff; stroke: #111; stroke-width: 1; }
+.drw .mod { fill: #f6e3c4; stroke: #6b4a1f; stroke-width: 1; }
+.drw .modbad { fill: #fbd0d0; stroke: #8a1c1c; stroke-width: 1; }
+.tpls { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.tpl { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px; }
+.tpl svg.tile { width: 100%; height: auto; display: block; }
+.tpl p { margin: 4px 2px 0; font-size: 12px; color: var(--muted); }
+.modrow { display: grid; grid-template-columns: minmax(0, 1fr) 40px 54px 54px 54px 28px; gap: 4px; align-items: center; margin-bottom: 5px; }
+.modrow input, .modrow select { width: 100%; min-width: 0; font-size: 15px; padding: 6px 4px; border: 1px solid var(--line); border-radius: 7px; background: #fffdf8; }
+.modhead { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+.modrow button { border: 0; background: #eee5d6; border-radius: 7px; padding: 6px 0; cursor: pointer; }
+.printhead { display: none; }
+.note { font-size: 12.5px; color: var(--muted); }
+.actions { display: grid; gap: 8px; margin-top: 10px; }
+
+@media print {
+  @page { size: A4; margin: 10mm; }
+  body { background: #fff; font-size: 11pt; }
+  header, .inputs, .noprint { display: none !important; }
+  main { padding: 0; max-width: none; }
+  .tool.active { display: block; }
+  .card { border: 0; padding: 0; }
+  .printhead { display: block; font-size: 20pt; font-weight: 800; margin-bottom: 4mm; }
+  .out h3 { break-after: avoid; }
+  table, figure.drw, .kpi, ol.steps li { break-inside: avoid; }
+  figure.drw svg { max-height: 240mm; border: 0; }
+  .tpls { display: block; }
+  .tpl { break-before: page; border: 0; padding: 0; }
+  .tpl svg.tile { width: 180mm !important; height: 255mm !important; }
+  .tpl p { display: none; }
+  .kpi { border: 1px solid #ccc; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Bauplan <span>App</span></h1>
+  <nav class="tabs" id="tabs"></nav>
+</header>
+<main id="main"></main>
+
+<script>
+'use strict';
+/* =====================================================================
+   Bauplan App
+   Ein Tool = { id, title, fields[], compute(values) -> plan }
+   plan = { title, kpis[], msgs[], drawings[], parts[], buy[], jigs[],
+            steps[], templates[], extraHtml }
+   Alle Maße in Millimeter.
+   ===================================================================== */
+
+/* ---------- Hilfsfunktionen ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const r05 = x => Math.round(x * 2) / 2;
+const num = x => { const r = r05(x); return (Number.isInteger(r) ? String(r) : r.toFixed(1)).replace('.', ','); };
+const mm = x => num(x) + ' mm';
+const cm2m = x => (Math.round(x / 10) / 100).toFixed(2).replace('.', ',') + ' m';
+const sum = a => a.reduce((s, x) => s + x, 0);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const STD_SCREW_LEN = [12, 16, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80];
+
+/* ---------- SVG-Bausteine ---------- */
+const S = {
+  rect: (x, y, w, h, a = '') => `<rect x="${x}" y="${y}" width="${Math.max(0, w)}" height="${Math.max(0, h)}" ${a}/>`,
+  line: (x1, y1, x2, y2, a = '') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${a}/>`,
+  poly: (pts, a = '') => `<polygon points="${pts.map(p => p.join(',')).join(' ')}" ${a}/>`,
+  pline: (pts, a = '') => `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" ${a}/>`,
+  circle: (x, y, r, a = '') => `<circle cx="${x}" cy="${y}" r="${r}" ${a}/>`,
+  text: (x, y, t, a = '') => `<text x="${x}" y="${y}" ${a}>${esc(t)}</text>`,
+};
+// Maßkette horizontal (y = Höhe der Maßlinie)
+function dimH(x1, x2, y, label, fs) {
+  const t = fs * 0.5;
+  return `<g class="dim">${S.line(x1, y, x2, y)}${S.line(x1 - t, y + t, x1 + t, y - t)}${S.line(x2 - t, y + t, x2 + t, y - t)}` +
+    S.text((x1 + x2) / 2, y - fs * 0.35, label, `font-size="${fs}" text-anchor="middle"`) + `</g>`;
+}
+// Maßkette vertikal (x = Lage der Maßlinie)
+function dimV(y1, y2, x, label, fs) {
+  const t = fs * 0.5, cy = (y1 + y2) / 2;
+  return `<g class="dim">${S.line(x, y1, x, y2)}${S.line(x - t, y1 + t, x + t, y1 - t)}${S.line(x - t, y2 + t, x + t, y2 - t)}` +
+    `<text x="${x - fs * 0.35}" y="${cy}" font-size="${fs}" text-anchor="middle" transform="rotate(-90 ${x - fs * 0.35} ${cy})">${esc(label)}</text></g>`;
+}
+function drawing(vx, vy, vw, vh, inner, caption) {
+  return `<figure class="drw"><svg viewBox="${vx} ${vy} ${vw} ${vh}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>` +
+    (caption ? `<figcaption>${esc(caption)}</figcaption>` : '') + `</figure>`;
+}
+
+/* ---------- 1:1-Schablonen (auf A4 gekachelt) ---------- */
+// Eine Schablone: { title, w, h, body (SVG in mm, Ursprung 0/0), hint }
+let clipSeq = 0;
+const TILE_W = 180, TILE_H = 240, FOOT = 15;
+function holeMark(x, y, d) {
+  const r = d / 2, c = Math.max(4, d * 0.8);
+  return S.circle(x, y, r, 'fill="none" stroke="#000" stroke-width="0.3"') +
+    S.line(x - c, y, x + c, y, 'stroke="#000" stroke-width="0.2"') + S.line(x, y - c, x, y + c, 'stroke="#000" stroke-width="0.2"');
+}
+function tileFooter(title, sub) {
+  const fy = TILE_H + 4;
+  let svg = S.text(0, fy + 1, title + (sub ? ' – ' + sub : ''), 'font-size="3.2" font-family="sans-serif" fill="#000"');
+  svg += S.text(0, fy + 8, 'Drucken mit 100 % / „Tatsächliche Größe“. Kontrollmaß rechts muss genau 100 mm sein →', 'font-size="2.6" font-family="sans-serif" fill="#444"');
+  const bx = TILE_W - 100, by = fy + 7;
+  svg += S.line(bx, by, bx + 100, by, 'stroke="#000" stroke-width="0.4"');
+  for (let i = 0; i <= 10; i++) svg += S.line(bx + i * 10, by - (i % 5 ? 1.5 : 3), bx + i * 10, by, 'stroke="#000" stroke-width="0.3"');
+  svg += S.text(bx + 50, by - 3.6, '100 mm', 'font-size="2.6" text-anchor="middle" font-family="sans-serif"');
+  return svg;
+}
+const tileOpen = () => `<svg class="tile" xmlns="http://www.w3.org/2000/svg" width="${TILE_W}mm" height="${TILE_H + FOOT}mm" viewBox="0 0 ${TILE_W} ${TILE_H + FOOT}"><rect x="0" y="0" width="${TILE_W}" height="${TILE_H + FOOT}" fill="#fff"/>`;
+// Lange, schmale Schablonen: in Abschnitte teilen, um 90° drehen und nebeneinander auf eine Seite setzen
+function renderStrips(t) {
+  const segLen = TILE_H - 4, colW = t.h + 8;
+  const nSeg = Math.ceil(t.w / segLen), perPage = Math.max(1, Math.floor(TILE_W / colW));
+  const pages = Math.ceil(nSeg / perPage);
+  let out = '';
+  for (let pg = 0; pg < pages; pg++) {
+    let svg = tileOpen();
+    for (let j = 0; j < perPage; j++) {
+      const k = pg * perPage + j;
+      if (k >= nSeg) break;
+      const x0 = k * segLen, id = 'clp' + (++clipSeq), cx = j * colW;
+      // (x,y) -> (cx + t.h - y, x - x0 + 2): Länge läuft nach unten
+      svg += `<g transform="matrix(0 1 -1 0 ${cx + t.h} ${2 - x0})"><defs><clipPath id="${id}"><rect x="${x0}" y="-5" width="${segLen}" height="${t.h + 10}"/></clipPath></defs><g clip-path="url(#${id})" font-family="sans-serif">${t.body}</g></g>`;
+      svg += S.line(cx, 2, cx + t.h, 2, 'stroke="#c00" stroke-width="0.25" stroke-dasharray="1.5 1"');
+      svg += S.line(cx, 2 + segLen, cx + t.h, 2 + segLen, 'stroke="#c00" stroke-width="0.25" stroke-dasharray="1.5 1"');
+      svg += S.text(cx + 1, 2 + segLen + 3.5, `Abschnitt ${k + 1}/${nSeg}${k < nSeg - 1 ? ' → unten an ' + (k + 2) + ' stoßen' : ' (Ende)'}`, 'font-size="2.4" font-family="sans-serif" fill="#c00"');
+    }
+    svg += tileFooter(t.title, `Blatt ${pg + 1}/${pages}, ${nSeg} Abschnitte an den roten Linien zuschneiden und der Reihe nach stoßen`) + '</svg>';
+    out += `<div class="tpl">${svg}<p>${esc(t.title)} – Blatt ${pg + 1}/${pages}${t.hint && pg === 0 ? ' · ' + esc(t.hint) : ''}</p></div>`;
+  }
+  return out;
+}
+function renderTemplate(t) {
+  if (t.w > TILE_W && t.h + 8 <= TILE_W) return renderStrips(t);
+  const cols = Math.max(1, Math.ceil(t.w / TILE_W)), rows = Math.max(1, Math.ceil(t.h / TILE_H));
+  const total = cols * rows;
+  let out = '', k = 0;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    k++;
+    const x0 = c * TILE_W, y0 = r * TILE_H, id = 'clp' + (++clipSeq);
+    const multi = total > 1;
+    let svg = `<svg class="tile" xmlns="http://www.w3.org/2000/svg" width="${TILE_W}mm" height="${TILE_H + FOOT}mm" viewBox="0 0 ${TILE_W} ${TILE_H + FOOT}">`;
+    svg += `<defs><clipPath id="${id}"><rect x="${x0}" y="${y0}" width="${TILE_W}" height="${TILE_H}"/></clipPath></defs>`;
+    svg += `<rect x="0" y="0" width="${TILE_W}" height="${TILE_H + FOOT}" fill="#fff"/>`;
+    svg += `<g transform="translate(${-x0} ${-y0})" clip-path="url(#${id})" font-family="sans-serif">${t.body}</g>`;
+    if (multi) {
+      svg += `<rect x="0.2" y="0.2" width="${TILE_W - 0.4}" height="${TILE_H - 0.4}" fill="none" stroke="#999" stroke-width="0.25" stroke-dasharray="3 2"/>`;
+      if (c < cols - 1) svg += S.text(TILE_W - 2, TILE_H / 2, `→ Teil ${k + 1}`, 'font-size="4" text-anchor="end" fill="#888"');
+      if (r < rows - 1) svg += S.text(TILE_W / 2, TILE_H - 2, `↓ Teil ${k + cols}`, 'font-size="4" text-anchor="middle" fill="#888"');
+    }
+    svg += tileFooter(t.title, multi ? `Teil ${k}/${total} (Zeile ${r + 1}, Spalte ${c + 1}) an gestrichelter Linie stoßen` : '');
+    svg += `</svg>`;
+    out += `<div class="tpl">${svg}<p>${esc(t.title)}${multi ? ` – Teil ${k}/${total}` : ''}${t.hint && k === 1 ? ' · ' + esc(t.hint) : ''}</p></div>`;
+  }
+  return out;
+}
+
+/* ---------- Zuschnitt-Optimierung (First Fit Decreasing) ---------- */
+function packLengths(items, binLen, kerf) {
+  const sorted = items.slice().sort((a, b) => b.len - a.len);
+  const bins = [];
+  for (const it of sorted) {
+    if (it.len > binLen) { bins.push({ used: it.len, items: [it], over: true }); continue; }
+    let bin = bins.find(b => !b.over && b.used + it.len <= binLen);
+    if (!bin) { bin = { used: 0, items: [] }; bins.push(bin); }
+    bin.items.push(it);
+    bin.used += it.len + kerf;
+  }
+  return bins;
+}
+function stripPlanSvg(bins, binLen, stripW, perSheet, caption) {
+  const gap = stripW * 0.25, fs = Math.max(18, binLen / 45);
+  const H = bins.length * (stripW + gap) + fs * 1.5;
+  let g = '';
+  bins.forEach((b, i) => {
+    const y = i * (stripW + gap) + fs * 1.2;
+    const sheetNo = Math.floor(i / perSheet) + 1;
+    g += S.text(0, y - 4, `Streifen ${i + 1} (Platte ${sheetNo})`, `font-size="${fs * 0.75}" class="lbl"`);
+    g += S.rect(0, y, binLen, stripW, 'fill="#f3efe6" stroke="#999" stroke-dasharray="6 4"');
+    let x = 0;
+    for (const it of b.items) {
+      g += S.rect(x, y, it.len, stripW, 'class="wood"');
+      g += S.text(x + it.len / 2, y + stripW / 2 + fs * 0.35, `${it.label} ${num(it.len)}`, `font-size="${fs * 0.8}" text-anchor="middle"`);
+      x += it.len + 4;
+    }
+  });
+  return drawing(-10, 0, binLen + 20, H, g, caption);
+}
+
+/* ---------- Generische Ausgabe ---------- */
+function partsTable(parts) {
+  if (!parts.length) return '';
+  let h = '<div class="tablewrap"><table><tr><th>Pos</th><th>Teil</th><th class="n">Stk</th><th class="n">Länge</th><th class="n">Breite</th><th class="n">Stärke</th><th>Material / Hinweis</th></tr>';
+  parts.forEach((p, i) => {
+    h += `<tr><td>${i + 1}</td><td>${esc(p.name)}</td><td class="n">${p.qty}</td><td class="n">${p.l != null ? num(p.l) : '–'}</td>` +
+      `<td class="n">${p.b != null ? num(p.b) : '–'}</td><td class="n">${p.t != null ? num(p.t) : '–'}</td><td>${esc(p.mat || '')}${p.note ? '<br><small>' + esc(p.note) + '</small>' : ''}</td></tr>`;
+  });
+  return h + '</table></div><p class="note">Alle Maße in mm. Länge = Faserrichtung bzw. lange Seite.</p>';
+}
+function listTable(rows, head) {
+  if (!rows.length) return '';
+  let h = `<div class="tablewrap"><table><tr>${head.map(x => `<th>${esc(x)}</th>`).join('')}</tr>`;
+  rows.forEach(r => { h += '<tr>' + r.map((c, i) => `<td${i === 1 ? ' class="n"' : ''}>${esc(c)}</td>`).join('') + '</tr>'; });
+  return h + '</table></div>';
+}
+function renderPlan(plan) {
+  let h = `<div class="printhead">${esc(plan.title)}</div>`;
+  h += `<h2 class="noprint">${esc(plan.title)}</h2>`;
+  if (plan.kpis && plan.kpis.length) h += '<div class="summary">' + plan.kpis.map(k => `<div class="kpi"><b>${esc(k[1])}</b><span>${esc(k[0])}</span></div>`).join('') + '</div>';
+  (plan.msgs || []).forEach(m => { h += `<div class="msg ${m[0]}">${esc(m[1])}</div>`; });
+  if (plan.fatal) return h;
+  if (plan.drawings && plan.drawings.length) h += '<h3>Zeichnungen</h3>' + plan.drawings.join('');
+  if (plan.parts && plan.parts.length) h += '<h3>Zuschnittliste</h3>' + partsTable(plan.parts);
+  if (plan.cutplan) h += '<h3>Zuschnittplan</h3>' + plan.cutplan;
+  if (plan.jigs && plan.jigs.length) h += '<h3>Lehren &amp; Hilfsmittel (selbst bauen)</h3>' + listTable(plan.jigs, ['Lehre', 'Maß', 'Wofür']);
+  if (plan.buy && plan.buy.length) h += '<h3>Einkaufsliste</h3>' + listTable(plan.buy, ['Artikel', 'Menge', 'Hinweis']);
+  if (plan.steps && plan.steps.length) h += '<h3>Bauanleitung</h3><ol class="steps">' + plan.steps.map(s => `<li>${s}</li>`).join('') + '</ol>';
+  if (plan.extraHtml) h += plan.extraHtml;
+  if (plan.templates && plan.templates.length) {
+    h += '<h3>Schablonen 1:1 zum Ausdrucken</h3><div class="msg info noprint">Beim Drucken „Tatsächliche Größe / 100 %“ wählen, nicht „An Seite anpassen“. Auf jedem Blatt ist ein 100-mm-Kontrollmaß – vor dem Bohren nachmessen! Mehrteilige Schablonen an der gestrichelten Linie zuschneiden und stumpf aneinanderkleben.</div>';
+    h += '<div class="tpls">' + plan.templates.map(renderTemplate).join('') + '</div>';
+  }
+  return h;
+}
+
+/* =====================================================================
+   TOOL 1: SAMLA-Kistenregal
+   ===================================================================== */
+const SAMLA = {
+  '5': { name: 'SAMLA 5 l', L: 280, W: 190, H: 140 },
+  '11': { name: 'SAMLA 11 l', L: 390, W: 280, H: 140 },
+  '22': { name: 'SAMLA 22 l', L: 390, W: 280, H: 280 },
+  '45': { name: 'SAMLA 45 l', L: 570, W: 390, H: 280 },
+  '65': { name: 'SAMLA 65 l', L: 570, W: 390, H: 420 },
+  '130': { name: 'SAMLA 130 l', L: 790, W: 570, H: 430 },
+  'custom': { name: 'Eigene Kiste' },
+};
+const SHEETS = { '2500x1250': [2500, 1250], '2800x2070': [2800, 2070], '2440x1220': [2440, 1220], '2050x1250': [2050, 1250] };
+
+const toolSamla = {
+  id: 'samla',
+  title: 'SAMLA-Regal',
+  fields: [
+    { g: 'Außenmaße Regal', id: 'H', label: 'Höhe H', def: 1000, unit: 'mm' },
+    { g: 'Außenmaße Regal', id: 'B', label: 'Breite B', def: 930, unit: 'mm', help: 'Wird auf volle Fächer abgerundet' },
+    { g: 'Außenmaße Regal', id: 'T', label: 'Tiefe T', def: 450, unit: 'mm' },
+    { g: 'Kiste', id: 'box', label: 'Kistentyp', type: 'select', def: '22', options: Object.entries(SAMLA).map(([k, v]) => [k, v.name]),
+      onchange: (v, set) => { const b = SAMLA[v]; if (b && b.L) { set('boxL', b.L); set('boxW', b.W); set('boxH', b.H); } } },
+    { g: 'Kiste', id: 'orient', label: 'Kiste einschieben mit', type: 'select', def: 'short', options: [['short', 'Schmalseite vorne'], ['long', 'Längsseite vorne']] },
+    { g: 'Kiste', id: 'boxL', label: 'Kiste Länge (über Rand)', def: 390, unit: 'mm', help: 'Selbst nachmessen!' },
+    { g: 'Kiste', id: 'boxW', label: 'Kiste Breite (über Rand)', def: 280, unit: 'mm' },
+    { g: 'Kiste', id: 'boxH', label: 'Kiste Höhe ohne Deckel', def: 280, unit: 'mm' },
+    { g: 'Kiste', id: 'o', label: 'Randüberstand je Seite', def: 15, unit: 'mm', help: 'Wie weit der obere Rand seitlich über die Wand der Kiste ragt' },
+    { g: 'Kiste', id: 'rimT', label: 'Randhöhe', def: 10, unit: 'mm', help: 'Von Unterkante Rand bis Oberkante Kiste' },
+    { g: 'Kiste', id: 'lid', label: 'Deckel-Zuschlag', def: 0, unit: 'mm', help: '0 = ohne Deckel' },
+    { g: 'Material', id: 's', label: 'Plattenstärke', def: 18, unit: 'mm' },
+    { g: 'Material', id: 'sheet', label: 'Plattenformat', type: 'select', def: '2500x1250', options: Object.keys(SHEETS).map(k => [k, k.replace('x', ' × ') + ' mm']) },
+    { g: 'Material', id: 'rh', label: 'Gleitleiste Höhe', def: 20, unit: 'mm' },
+    { g: 'Material', id: 'p', label: 'Gleitleiste Stärke', def: 15, unit: 'mm', help: 'Wie weit die Leiste von der Wand absteht' },
+    { g: 'Material', id: 'stock', label: 'Leisten-Lagerlänge', def: 2400, unit: 'mm' },
+    { g: 'Material', id: 'back', label: 'Rückwand', type: 'select', def: 'hdf', options: [['hdf', 'HDF 3 mm aufgenagelt'], ['none', 'keine (Anschlagklötze)']] },
+    { g: 'Spiel & Luft', id: 'spiel', label: 'Seitliches Spiel Kiste', def: 6, unit: 'mm' },
+    { g: 'Spiel & Luft', id: 'gap', label: 'Mind. Luft zwischen Kisten', def: 20, unit: 'mm' },
+    { g: 'Spiel & Luft', id: 'kerf', label: 'Schnittbreite Säge', def: 3, unit: 'mm' },
+  ],
+  compute(v) {
+    const msgs = [], plan = { title: 'SAMLA-Kistenregal', msgs };
+    const s = v.s, rimW = v.orient === 'short' ? Math.min(v.boxL, v.boxW) : Math.max(v.boxL, v.boxW);
+    const rimD = v.orient === 'short' ? Math.max(v.boxL, v.boxW) : Math.min(v.boxL, v.boxW);
+    const C = rimW + v.spiel;                       // lichte Fachbreite
+    const pMax = v.o + (v.spiel - 4) / 2;           // max. Leistenstärke, damit Kistenkörper durchpasst
+    let p = v.p;
+    if (p > pMax) { p = Math.floor(pMax); msgs.push(['warn', `Gleitleiste auf ${p} mm Stärke reduziert – sonst klemmt der Kistenkörper zwischen den Leisten (Randüberstand ${v.o} mm).`]); }
+    const auflage = p - v.spiel / 2;
+    if (auflage < 6) msgs.push(['warn', `Der Kistenrand liegt nur ${num(auflage)} mm auf der Leiste auf. Randüberstand nachmessen oder seitliches Spiel verkleinern.`]);
+    const Hi = v.H - 2 * s, Bi = v.B - 2 * s;
+    const nC = Math.floor((Bi + s) / (C + s));
+    const slotMin = v.boxH + v.lid + v.gap;
+    const nR = Math.floor(Hi / slotMin);
+    if (nC < 1) { msgs.push(['err', `Breite zu klein: Für eine Kiste braucht das Regal mindestens ${mm(C + 2 * s)} Breite.`]); plan.fatal = true; return plan; }
+    if (nR < 1) { msgs.push(['err', `Höhe zu klein: Für eine Reihe braucht das Regal mindestens ${mm(slotMin + 2 * s)} Höhe.`]); plan.fatal = true; return plan; }
+    const Beff = nC * C + (nC - 1) * s + 2 * s;
+    if (v.B - Beff > 0.4) msgs.push(['info', `Breite auf ${mm(Beff)} angepasst (${nC} Fächer à ${mm(C)} lichte Breite). Für ein weiteres Fach wäre B = ${mm(Beff + C + s)} nötig.`]);
+    const back = v.back === 'hdf' ? 3 : 0;
+    const setback = 5;
+    const L = v.T - setback;                        // Leistenlänge
+    if (L < rimD) msgs.push(['warn', `Kiste (${mm(rimD)} tief) ragt ${mm(rimD - L)} über die Leisten nach vorne hinaus. Tiefe T auf mindestens ${mm(rimD + setback)} erhöhen.`]);
+    if (v.T > rimD + 80) msgs.push(['info', `Die Kiste sitzt ${mm(v.T - rimD)} hinter der Vorderkante – Griff ist evtl. schlecht erreichbar. Passende Tiefe wäre ca. ${mm(rimD + 20)}.`]);
+
+    // Reihen gleichmäßig verteilen
+    const P = Hi / nR;
+    const c = (P - v.boxH - v.lid) / 2;
+    const rows = [];
+    for (let i = 0; i < nR; i++) {
+      const slotTop = Hi - i * P;                   // von Oberkante Boden (innen) gemessen
+      const railTop = slotTop - c - v.lid - v.rimT;
+      rows.push({ railTop, railBot: railTop - v.rh, fromPanelTop: v.H - s - railTop });
+    }
+    const startLehre = rows[0].fromPanelTop;        // Oberkante Seitenwand -> Oberkante 1. Leiste
+    const zwLehre = P - v.rh;                       // Unterkante Leiste -> Oberkante nächste Leiste
+
+    // Schrauben
+    const holes = L > 350 ? [40, L / 2, L - 40] : [40, L - 40];
+    const holesB = holes.map(x => x + 25);
+    let screwLen = STD_SCREW_LEN.filter(l => l <= p + s - 3).pop() || 16;
+    const railScrews = nR * nC * 2 * holes.length;
+    const nJ = v.T < 300 ? 2 : v.T < 500 ? 3 : 4;
+    const cornerHoles = nJ === 2 ? [40, v.T - 40] : Array.from({ length: nJ }, (_, i) => 40 + i * (v.T - 80) / (nJ - 1));
+    const carcassScrews = (4 + (nC - 1) * 2) * nJ;
+
+    // Teile
+    const parts = [
+      { name: 'Seitenwand', qty: 2, l: v.H, b: v.T, t: s, mat: 'Platte', note: 'spiegelbildlich – Oberkante markieren' },
+      { name: 'Boden / Deckel', qty: 2, l: Beff - 2 * s, b: v.T, t: s, mat: 'Platte', note: 'zwischen den Seiten' },
+    ];
+    if (nC > 1) parts.push({ name: 'Zwischenwand', qty: nC - 1, l: Hi, b: v.T, t: s, mat: 'Platte', note: 'zwischen Boden und Deckel' });
+    parts.push({ name: 'Gleitleiste', qty: nR * nC * 2, l: L, b: v.rh, t: p, mat: 'Leiste Buche/Kiefer', note: `Bohrbild A: ${nR * (nC + 1)} Stk, Bohrbild B: ${nR * (nC - 1)} Stk` });
+    if (back) parts.push({ name: 'Rückwand', qty: 1, l: v.H, b: Beff, t: 3, mat: 'HDF', note: 'im Baumarkt rechtwinklig schneiden lassen – macht das Regal steif' });
+    else parts.push({ name: 'Anschlagklotz', qty: nR * nC, l: 40, b: v.rh, t: 15, mat: 'Leistenrest', note: 'hinten auf eine Gleitleiste je Fach' });
+
+    // Zuschnittplan Platten (Streifen T)
+    const [shL, shW] = SHEETS[v.sheet];
+    const panelItems = [];
+    parts.filter(x => x.mat === 'Platte').forEach(x => { for (let i = 0; i < x.qty; i++) panelItems.push({ len: x.l, label: x.name.split(' ')[0] }); });
+    const perSheet = Math.floor((shW + v.kerf) / (v.T + v.kerf));
+    let sheets = 0, cutplan = '';
+    if (perSheet < 1) msgs.push(['err', `Tiefe ${mm(v.T)} ist breiter als die Platte (${mm(shW)}).`]);
+    else {
+      const bins = packLengths(panelItems, shL, v.kerf);
+      if (bins.some(b => b.over)) msgs.push(['err', `Ein Teil ist länger als die Platte (${mm(shL)}). Größeres Plattenformat wählen.`]);
+      sheets = Math.ceil(bins.length / perSheet);
+      cutplan = `<p>Platte ${shL} × ${shW} mm zuerst in <b>${bins.length} Streifen à ${mm(v.T)}</b> schneiden lassen (${perSheet} Streifen pro Platte), dann ablängen:</p>` +
+        stripPlanSvg(bins, shL, v.T, perSheet, 'Ablängplan der Plattenstreifen (Reihenfolge egal, Schnittfuge eingerechnet)');
+    }
+    const railBins = packLengths(Array.from({ length: nR * nC * 2 }, () => ({ len: L, label: 'L' })), v.stock, v.kerf);
+
+    plan.kpis = [
+      ['Kisten gesamt', `${nR * nC} (${nC} × ${nR})`],
+      ['Außenmaß B × H × T', `${num(Beff)} × ${num(v.H)} × ${num(v.T)}`],
+      ['Lichte Fachbreite', mm(C)],
+      ['Reihenabstand', mm(P)],
+      ['Platten', `${sheets} × ${shL}×${shW}`],
+      ['Gleitleisten', `${railBins.length} × ${v.stock} mm`],
+    ];
+
+    // --- Zeichnung Vorderansicht ---
+    const fs = Math.max(v.H, Beff) / 32;
+    let g = '';
+    g += S.rect(0, 0, s, v.H, 'class="wood"') + S.rect(Beff - s, 0, s, v.H, 'class="wood"');
+    g += S.rect(s, 0, Beff - 2 * s, s, 'class="wood"') + S.rect(s, v.H - s, Beff - 2 * s, s, 'class="wood"');
+    for (let j = 0; j < nC; j++) {
+      const x0 = s + j * (C + s);
+      if (j > 0) g += S.rect(x0 - s, s, s, Hi, 'class="wood"');
+      rows.forEach(r => {
+        const y = v.H - s - r.railTop;
+        g += S.rect(x0, y, p, v.rh, 'class="wood2"') + S.rect(x0 + C - p, y, p, v.rh, 'class="wood2"');
+        const bx = x0 + v.spiel / 2;
+        if (v.lid) g += S.rect(bx - 2, y - v.rimT - v.lid, rimW + 4, v.lid, 'class="boxrim"');
+        g += S.rect(bx, y - v.rimT, rimW, v.rimT, 'class="boxrim"');
+        const bodyH = v.boxH - v.rimT, inset = v.o, taper = Math.min(12, rimW * 0.04);
+        g += S.poly([[bx + inset, y], [bx + rimW - inset, y], [bx + rimW - inset - taper, y + bodyH], [bx + inset + taper, y + bodyH]], 'class="box"');
+      });
+      if (j === 0) g += dimH(x0, x0 + C, v.H + fs * 1.6, num(C), fs);
+    }
+    g += dimH(0, Beff, -fs * 0.8, `B ${num(Beff)}`, fs);
+    g += dimV(0, v.H, -fs * 0.9, `H ${num(v.H)}`, fs);
+    if (nR > 1) g += dimV(v.H - s - rows[0].railTop, v.H - s - rows[1].railTop, Beff + fs * 1.2, `${num(P)}`, fs);
+    const front = drawing(-fs * 2.4, -fs * 2.4, Beff + fs * 4.4, v.H + fs * 4.8, g, 'Vorderansicht mit Kisten (Gleitleisten dunkel)');
+
+    // --- Zeichnung Seitenwand (Innenseite) ---
+    const fs2 = Math.max(v.H, v.T) / 30;
+    let g2 = S.rect(0, 0, v.T, v.H, 'class="wood"');
+    g2 += S.rect(0, 0, v.T, s, 'class="ghost"') + S.rect(0, v.H - s, v.T, s, 'class="ghost"');
+    g2 += S.text(v.T / 2, s * 0.75, 'Deckel', `font-size="${fs2 * 0.6}" text-anchor="middle" class="lbl"`);
+    g2 += S.text(v.T / 2, v.H - s * 0.25, 'Boden', `font-size="${fs2 * 0.6}" text-anchor="middle" class="lbl"`);
+    rows.forEach((r, i) => {
+      const y = r.fromPanelTop;
+      g2 += S.rect(setback, y, L, v.rh, 'class="wood2"');
+      holes.forEach(hx => { g2 += S.circle(setback + hx, y + v.rh / 2, Math.max(2, v.rh / 6), 'class="hole"'); });
+      if (i === 0) g2 += dimV(0, y, -fs2 * 0.6, `${num(startLehre)}`, fs2 * 0.7);
+      else g2 += dimV(rows[i - 1].fromPanelTop + v.rh, y, -fs2 * 0.6, `${num(zwLehre)}`, fs2 * 0.7);
+    });
+    cornerHoles.forEach(hx => { g2 += S.circle(hx, s / 2, Math.max(2, s / 6), 'class="hole"') + S.circle(hx, v.H - s / 2, Math.max(2, s / 6), 'class="hole"'); });
+    g2 += dimH(0, v.T, -fs2 * 0.6, `T ${num(v.T)}`, fs2 * 0.8);
+    g2 += dimH(setback, setback + L, v.H + fs2 * 1.2, `Leiste ${num(L)}`, fs2 * 0.7);
+    g2 += S.text(0, v.H + fs2 * 2.4, '◄ vorne', `font-size="${fs2 * 0.6}" class="lbl"`);
+    const side = drawing(-fs2 * 2, -fs2 * 1.6, v.T + fs2 * 3, v.H + fs2 * 4.4, g2, 'Seitenwand von innen: Lage der Gleitleisten. Oberstes Maß = Startlehre, die übrigen = Zwischenlehre');
+
+    plan.drawings = [front, side];
+    plan.parts = parts;
+    plan.cutplan = cutplan;
+    plan.jigs = [
+      ['Ablänglehre Gleitleiste', mm(L), `Anschlag an Kapp-/Gehrungssäge, ${nR * nC * 2} gleiche Leisten ohne Nachmessen`],
+      ['Startlehre (Distanzklotz)', mm(startLehre), 'Oberkante Seitenwand → Oberkante oberste Leiste'],
+      ['Zwischenlehre (Distanzklotz)', mm(zwLehre), 'Unterkante Leiste → Oberkante nächste Leiste (2 Stück bauen, links + rechts)'],
+      ['Fachlehre (Abstandsbrett)', mm(C), 'Lichter Abstand der Zwischenwände beim Verschrauben'],
+      ['Bohrschablone Gleitleiste A/B', `${holes.length} Löcher`, 'Papier 1:1 – siehe unten. B ist um 25 mm versetzt, damit sich Schrauben in der Zwischenwand nicht treffen'],
+      ['Eck-Bohrschablone', `${nJ} Löcher, ${mm(s / 2)} vom Rand`, 'Papier 1:1 – Seitenwand → Boden/Deckel'],
+    ];
+    const totalRail = nR * nC * 2 * L;
+    plan.buy = [
+      [`Platte ${s} mm (Multiplex, Birke oder Spanplatte)`, `${sheets} Platte(n)`, `${shL} × ${shW} mm, Zuschnitt siehe Plan`],
+      [`Leiste ${v.rh} × ${p} mm`, `${railBins.length} × ${v.stock} mm`, `gesamt ${cm2m(totalRail)} + Verschnitt`],
+      [`Spax Senkkopf 3,5 × ${screwLen}`, `${Math.ceil(railScrews * 1.1)} Stk`, 'für Gleitleisten'],
+      ['Spax Senkkopf 4 × 50', `${Math.ceil(carcassScrews * 1.1)} Stk`, 'für den Korpus'],
+      ...(back ? [['HDF-Rückwand 3 mm', '1 Stk', `${num(Beff)} × ${num(v.H)} mm zuschneiden lassen`], ['Nägel/Klammern 25 mm', `ca. ${Math.ceil((2 * (Beff + v.H)) / 100 + (nC - 1) * v.H / 150)} Stk`, 'alle 10 cm']] : []),
+      ['Holzleim (D3)', '1 Flasche', 'Leisten zusätzlich leimen'],
+      ['Kippsicherung: 2 Winkel + Dübel/Schrauben', '1 Satz', 'Regal immer an der Wand sichern!'],
+      [`${SAMLA[v.box] && SAMLA[v.box].L ? SAMLA[v.box].name : 'Kisten'}`, `${nR * nC} Stk`, ''],
+    ];
+    plan.steps = [
+      `<b>Platten zuschneiden:</b> Im Baumarkt zuerst Streifen in Regaltiefe ${mm(v.T)} schneiden lassen, dann nach Zuschnittplan ablängen. Seitenwände ${mm(v.H)}, Boden/Deckel ${mm(Beff - 2 * s)}${nC > 1 ? `, Zwischenwände ${mm(Hi)}` : ''}.`,
+      `<b>Lehren bauen:</b> Aus Reststücken Startlehre ${mm(startLehre)}, 2× Zwischenlehre ${mm(zwLehre)} und Fachlehre ${mm(C)} exakt ablängen. Maße mit Messschieber prüfen – jeder Fehler wiederholt sich in jeder Reihe.`,
+      `<b>Gleitleisten ablängen:</b> Ablänglehre/Anschlag auf ${mm(L)} einstellen, ${nR * nC * 2} Leisten kappen. Kanten leicht brechen, Oberseite evtl. mit Kerze/Wachs einreiben – dann gleiten die Kisten besser.`,
+      `<b>Leisten vorbohren:</b> Bohrschablone ausdrucken, auf die Leiste kleben. Bohrbild <b>A</b> für alle Leisten an den Außenseiten und an der linken Seite jeder Zwischenwand, Bohrbild <b>B</b> (25 mm versetzt) für die rechte Seite der Zwischenwände. Ø 3,5 mm durchbohren, ansenken.`,
+      `<b>Seiten markieren:</b> Seitenwände und Zwischenwände flach hinlegen, Oberkante und Vorderkante mit Bleistift markieren. Linke und rechte Seitenwand sind <b>spiegelbildlich</b> – Leisten kommen immer auf die Innenseite!`,
+      `<b>Leisten montieren:</b> Startlehre an die Oberkante anlegen, erste Leiste darunter anlegen, vorne ${mm(setback)} zurückgesetzt. Leim auftragen, mit ${screwLen} mm Schrauben fixieren. Dann Zwischenlehre auf die Leiste stellen, nächste Leiste darunter – und so weiter. Bei Zwischenwänden beide Seiten bestücken (A links, B rechts). Hinweis: Bei Zwischenwänden ist die „Oberkante“ die Kante, die später am Deckel anliegt – Startlehre dort um ${mm(s)} kürzer (${mm(startLehre - s)}).`,
+      `<b>Korpus vorbohren:</b> Eck-Bohrschablone an Ober- und Unterkante der Seitenwände anlegen, Ø 4 mm vorbohren und ansenken. Für die Zwischenwände dieselbe Schablone auf Deckel und Boden verwenden – Position mit der Fachlehre bestimmen.`,
+      `<b>Korpus verschrauben:</b> Boden und Deckel zwischen die Seitenwände setzen und mit 4 × 50 verschrauben. Zwischenwände mit der Fachlehre (${mm(C)}) ausrichten und durch Deckel und Boden verschrauben.`,
+      back ? `<b>Rechtwinklig stellen:</b> Diagonalen messen – sind beide gleich lang, ist das Regal rechtwinklig. Dann HDF-Rückwand aufnageln (alle 10 cm, auch in die Zwischenwände).` : `<b>Rechtwinklig stellen:</b> Diagonalen messen, beide müssen gleich lang sein. Anschlagklötze hinten auf je eine Gleitleiste pro Fach leimen, damit die Kisten nicht hinten herausrutschen.`,
+      `<b>Aufstellen:</b> Regal mit 2 Winkeln an der Wand sichern (Kippgefahr bei vollen, ausgezogenen Kisten!). Kisten einschieben, Leichtgängigkeit testen.`,
+    ];
+
+    // --- Schablonen ---
+    const rail = (pat, y0) => {
+      let b = S.rect(0, y0, L, v.rh, 'fill="none" stroke="#000" stroke-width="0.3"');
+      b += S.text(4, y0 - 2, `Bohrbild ${pat} – Leiste ${num(L)} × ${num(v.rh)} (vorne = links)`, 'font-size="3.5"');
+      (pat === 'A' ? holes : holesB).forEach(hx => { b += holeMark(hx, y0 + v.rh / 2, 3.5); b += S.text(hx, y0 + v.rh + 4, num(hx), 'font-size="3" text-anchor="middle"'); });
+      return b;
+    };
+    const tH = 2 * v.rh + 30;
+    const tpls = [{ title: 'Bohrschablone Gleitleiste A + B', w: L + 2, h: tH, body: rail('A', 8) + rail('B', 8 + v.rh + 14), hint: 'ausschneiden, auf die Leiste kleben, ankörnen' }];
+    let cb = S.rect(0, 10, v.T, 30, 'fill="none" stroke="#000" stroke-width="0.3"');
+    cb += S.line(0, 10, v.T, 10, 'stroke="#000" stroke-width="0.8"');
+    cb += S.text(2, 7, `Eck-Bohrschablone – dicke Linie an Ober-/Unterkante Seitenwand anlegen, vorne = links. Löcher Ø 4, ${num(s / 2)} mm von der Kante`, 'font-size="3"');
+    cornerHoles.forEach(hx => { cb += holeMark(hx, 10 + s / 2, 4); cb += S.text(hx, 10 + s / 2 + 8, num(hx), 'font-size="3" text-anchor="middle"'); });
+    tpls.push({ title: 'Eck-Bohrschablone Korpus', w: v.T + 2, h: 45, body: cb });
+    plan.templates = tpls;
+    return plan;
+  },
+};
+
+/* =====================================================================
+   TOOL 2: French-Cleat-Wand
+   ===================================================================== */
+const MODS = {
+  ablage: { name: 'Ablage', def: { w: 400, h: 150, d: 200 } },
+  fach: { name: 'Fach/Kasten', def: { w: 300, h: 200, d: 150 } },
+  werkzeug: { name: 'Werkzeughalter', def: { w: 400, h: 120, d: 80 } },
+  haken: { name: 'Hakenleiste', def: { w: 300, h: 120, d: 0 } },
+};
+const DEFAULT_MODULES = [
+  { type: 'ablage', qty: 2, w: 400, h: 150, d: 200 },
+  { type: 'fach', qty: 2, w: 300, h: 200, d: 150 },
+  { type: 'werkzeug', qty: 1, w: 400, h: 120, d: 80 },
+  { type: 'haken', qty: 1, w: 300, h: 120, d: 0 },
+];
+
+const toolCleat = {
+  id: 'cleat',
+  title: 'French Cleat',
+  fields: [
+    { g: 'Wandfläche', id: 'W', label: 'Breite', def: 1200, unit: 'mm' },
+    { g: 'Wandfläche', id: 'Hw', label: 'Höhe', def: 1000, unit: 'mm' },
+    { g: 'Wandfläche', id: 'board', label: 'Trägerplatte', type: 'select', def: 'none', options: [['none', 'Leisten direkt an die Wand'], ['ply', 'auf Platte 12 mm (dann an Wand)']] },
+    { g: 'Leisten', id: 'pitch', label: 'Leistenabstand (Raster)', def: 150, unit: 'mm', help: 'Oberkante zu Oberkante' },
+    { g: 'Leisten', id: 'ch', label: 'Leistenhöhe (lange Seite)', def: 70, unit: 'mm' },
+    { g: 'Leisten', id: 't', label: 'Materialstärke', def: 18, unit: 'mm' },
+    { g: 'Leisten', id: 'stock', label: 'Brett-Lagerlänge', def: 2400, unit: 'mm' },
+    { g: 'Leisten', id: 'kerf', label: 'Schnittbreite Säge', def: 3, unit: 'mm' },
+    { g: 'Werkzeughalter', id: 'holeD', label: 'Loch-Ø', def: 12, unit: 'mm' },
+    { g: 'Werkzeughalter', id: 'holeSp', label: 'Lochabstand', def: 40, unit: 'mm' },
+    { g: 'Module', id: 'modules', type: 'modules', def: DEFAULT_MODULES },
+  ],
+  compute(v) {
+    const msgs = [], plan = { title: 'French-Cleat-Wand', msgs };
+    const t = v.t, ch = v.ch;
+    if (ch < t + 20) { msgs.push(['err', `Leistenhöhe muss mindestens ${t + 20} mm sein (Materialstärke + 20).`]); plan.fatal = true; return plan; }
+    if (v.pitch < ch + 20) msgs.push(['warn', `Raster ${mm(v.pitch)} ist sehr eng – zwischen den Leisten bleiben nur ${mm(v.pitch - ch)}. Empfohlen: ≥ ${mm(ch + 50)}.`]);
+    const top0 = 40;                                   // Oberkante 1. Leiste unter Oberkante Fläche
+    const nRows = Math.max(1, Math.floor((v.Hw - top0 - ch) / v.pitch) + 1);
+    const rowsY = Array.from({ length: nRows }, (_, i) => top0 + i * v.pitch);
+    const pieces = Math.ceil(v.W / v.stock);
+    const pieceLen = v.W / pieces;
+    const ripW = 2 * ch - t + 4;
+
+    // Module expandieren
+    const inst = [];
+    const parts = [], tplMap = {};
+    let modScrews = 0, hooks = 0;
+    const partAdd = (name, qty, l, b, tt, mat, note) => {
+      const ex = parts.find(p => p.name === name && p.l === l && p.b === b && p.t === tt);
+      if (ex) ex.qty += qty; else parts.push({ name, qty, l, b, t: tt, mat, note });
+    };
+    v.modules.forEach((m, idx) => {
+      const w = m.w, q = Math.max(0, m.qty | 0);
+      if (!q || w <= 0) return;
+      const backH = Math.max(m.h, ch + 50);
+      const label = `${MODS[m.type].name} ${w}`;
+      partAdd(`${label}: Rückwand`, q, w, backH, t, 'Platte', '');
+      partAdd(`${label}: Modulleiste 45°`, q, w, ch, t, 'aus Leistenstreifen', 'Schräge nach unten, Spitze zur Wand');
+      partAdd(`${label}: Abstandsleiste`, q, w, 30, t, 'Platte/Rest', 'unten hinten, gleiche Stärke wie Leiste');
+      let extraH = 0;
+      if (m.type === 'ablage' || m.type === 'werkzeug') {
+        const d = Math.max(m.d, t + 30);
+        partAdd(`${label}: ${m.type === 'ablage' ? 'Boden' : 'Lochbrett'}`, q, w, d, t, 'Platte', m.type === 'werkzeug' ? 'Bohrschablone siehe unten' : '');
+        const a = d - t, b = backH;
+        partAdd(`${label}: Konsole (Dreieck)`, q * 2, a, b, t, 'Platte', 'Schablone 1:1 siehe unten');
+        const key = `${a}x${b}`;
+        if (!tplMap[key]) tplMap[key] = { a, b };
+        extraH = t;
+        modScrews += q * (Math.ceil(w / 150) + 2 * 4);
+        if (m.type === 'werkzeug') {
+          const n = Math.max(1, Math.floor((w - 60) / v.holeSp) + 1);
+          tplMap['holes' + w + 'x' + d] = { holes: true, w, d, n };
+        }
+      } else if (m.type === 'fach') {
+        const d = Math.max(m.d, t + 30), h = Math.min(m.h, backH);
+        partAdd(`${label}: Seite`, q * 2, h, d - t, t, 'Platte', '');
+        partAdd(`${label}: Boden`, q, w - 2 * t, d - t, t, 'Platte', '');
+        partAdd(`${label}: Front`, q, w - 2 * t, Math.round(h * 0.4), t, 'Platte', 'niedrige Front, oben offen');
+        modScrews += q * 14;
+      } else if (m.type === 'haken') {
+        const n = Math.max(1, Math.floor((w - 40) / 80) + 1);
+        hooks += n * q;
+      }
+      modScrews += q * (Math.ceil(w / 120) + 2);
+      for (let i = 0; i < q; i++) inst.push({ idx, type: m.type, w, h: backH + extraH, depth: m.d, name: MODS[m.type].name });
+    });
+
+    // Wandleisten
+    partAdd('Wandleiste 45°', nRows * pieces, pieceLen, ch, t, 'aus Leistenstreifen', 'Schräge nach oben, Spitze vorne oben');
+    if (v.board === 'ply') partAdd('Trägerplatte', 1, v.W, v.Hw, 12, 'Sperrholz/OSB 12 mm', 'bei Übergröße teilen, Stoß auf Leistenmitte');
+    const lehre = v.pitch - ch;
+    partAdd('Abstandslehre', 2, lehre, 60, t, 'Rest', 'Raster ohne Messen');
+
+    // Zuschnitt Leisten: jeder Streifen ergibt 2 Leisten
+    const cleatItems = [];
+    for (let i = 0; i < nRows * pieces; i++) cleatItems.push({ len: pieceLen, label: 'Wand' });
+    v.modules.forEach(m => { for (let i = 0; i < (m.qty | 0); i++) if (m.w > 0) cleatItems.push({ len: m.w, label: 'Modul' }); });
+    const bins = packLengths(cleatItems, v.stock, v.kerf);
+    const boards = Math.ceil(bins.length / 2);
+    const plateArea = sum(parts.filter(p => p.mat === 'Platte' || p.mat === 'Platte/Rest').map(p => p.qty * p.l * p.b)) / 1e6;
+
+    // Layout auf der Wand
+    const placed = [], notPlaced = [];
+    const gapM = 10;
+    inst.sort((a, b) => b.h - a.h || b.w - a.w).forEach(m => {
+      let ok = false;
+      for (let r = 0; r < nRows && !ok; r++) {
+        const top = rowsY[r] - (ch - t) - (m.type === 'ablage' || m.type === 'werkzeug' ? t : 0);
+        const bot = top + m.h;
+        if (top < 0 || bot > v.Hw) continue;
+        const xs = [0, ...placed.map(p => p.x + p.w + gapM)].sort((a, b) => a - b);
+        for (const x of xs) {
+          if (x + m.w > v.W) continue;
+          const hit = placed.some(p => x < p.x + p.w + gapM && x + m.w + gapM > p.x && top < p.y + p.h + gapM && bot + gapM > p.y);
+          if (!hit) { placed.push({ ...m, x, y: top }); ok = true; break; }
+        }
+      }
+      if (!ok) notPlaced.push(m);
+    });
+    if (notPlaced.length) msgs.push(['warn', `${notPlaced.length} Modul(e) passen im Vorschlag nicht auf die Fläche: ${notPlaced.map(m => m.name + ' ' + m.w).join(', ')}. Fläche vergrößern oder Module verkleinern.`]);
+
+    plan.kpis = [
+      ['Wandleisten-Reihen', `${nRows} × ${num(v.W)}`],
+      ['Module', String(inst.length)],
+      ['Leistenstreifen', `${boards} Brett(er) ${t}×${num(ripW)}×${v.stock}`],
+      ['Plattenmaterial Module', `ca. ${(plateArea * 1.25).toFixed(2).replace('.', ',')} m²`],
+      ['Abstandslehre', mm(lehre)],
+    ];
+
+    // --- Zeichnung Wand ---
+    const fs = Math.max(v.W, v.Hw) / 34;
+    let g = S.rect(0, 0, v.W, v.Hw, v.board === 'ply' ? 'class="wood"' : 'class="wall"');
+    rowsY.forEach(y => {
+      for (let i = 0; i < pieces; i++) g += S.rect(i * pieceLen + (i ? 2 : 0), y, pieceLen - (i ? 2 : 0), ch, 'class="wood2"');
+    });
+    placed.forEach(p => {
+      g += S.rect(p.x, p.y, p.w, p.h, 'class="mod"');
+      g += S.text(p.x + p.w / 2, p.y + p.h / 2 + fs * 0.3, `${p.name} ${p.w}`, `font-size="${fs * 0.7}" text-anchor="middle" class="lbl"`);
+    });
+    g += dimH(0, v.W, -fs * 0.8, num(v.W), fs);
+    g += dimV(0, v.Hw, -fs * 0.9, num(v.Hw), fs);
+    if (nRows > 1) g += dimV(rowsY[0], rowsY[1], v.W + fs * 1.2, num(v.pitch), fs);
+    const wall = drawing(-fs * 2.4, -fs * 2.4, v.W + fs * 4.4, v.Hw + fs * 3.2, g, 'Wandansicht: Leistenreihen (dunkel) und Vorschlag zur Modulverteilung');
+
+    // --- Schnitt French Cleat ---
+    const k = 1, X0 = 40;
+    let gs = S.rect(0, -40, X0 - 2, ch * 2 + 120, 'class="wall"');
+    gs += S.text(4, -28, 'Wand', 'font-size="9" class="lbl"');
+    // Wandleiste: Spitze vorne oben (x=t, y=0), an der Wand niedriger (y=t)
+    const wy = 60;
+    gs += S.poly([[X0, wy + t], [X0 + t, wy], [X0 + t, wy + ch], [X0, wy + ch]], 'class="wood2"');
+    // Modulleiste: liegt auf der Schräge, Spitze hinten unten
+    gs += S.poly([[X0, wy + t - 0.5], [X0, wy + t - ch - 0.5], [X0 + t, wy + t - ch - 0.5], [X0 + t, wy - 0.5]], 'class="wood"');
+    // Modulrückwand
+    const mbH = ch + 110;
+    gs += S.rect(X0 + t, wy + t - ch - 0.5, t, mbH, 'class="wood"');
+    gs += S.rect(X0, wy + t - ch - 0.5 + mbH - 30, t, 30, 'class="wood"');
+    const lx = X0 + 2 * t + 8;
+    gs += S.text(lx, wy - ch * 0.5, '← Modulleiste (Spitze unten, zur Wand)', 'font-size="7" class="lbl"');
+    gs += S.text(lx, wy + ch * 0.55, '← Wandleiste (Spitze oben, vorne)', 'font-size="7" class="lbl"');
+    gs += S.text(lx, wy + ch + 18, '← Modul-Rückwand', 'font-size="7" class="lbl"');
+    gs += S.text(lx, wy + t - ch + mbH - 12, '← Abstandsleiste', 'font-size="7" class="lbl"');
+    const section = drawing(0, -50, 200 * k, mbH + 70, gs, `Schnitt: ${ch} mm hohe Leisten, 45° gerissen. Das Gewicht drückt das Modul zur Wand.`);
+    plan.drawings = [wall, section];
+    plan.parts = parts;
+    plan.cutplan = `<p>Bretter ${t} × mind. ${mm(ripW)} × ${v.stock} mm mittig mit 45° längs auftrennen (Tischkreissäge oder Handkreissäge mit Führungsschiene, Sägeblatt auf 45°). Jedes Brett ergibt <b>zwei</b> Leisten mit ${mm(ch)} langer Seite.</p>` +
+      stripPlanSvg(bins, v.stock, ch, 2, `Ablängplan der ${bins.length} Leisten (2 je Brett)`);
+    plan.jigs = [
+      ['Abstandslehre', mm(lehre), 'Unterkante Leiste → Oberkante nächste Leiste. Auf die montierte Leiste stellen, nächste Leiste aufsetzen, verschrauben.'],
+      ['Wasserwaage / Laser', '–', 'nur die oberste Leiste ausrichten, Rest über die Lehre'],
+      ...Object.values(tplMap).filter(x => !x.holes).map(x => [`Konsolen-Schablone ${num(x.a)} × ${num(x.b)}`, '1:1 Papier', 'aufkleben, mit Stichsäge aussägen; erste Konsole dient als Schablone für die übrigen']),
+    ];
+    const wallPts = nRows * (Math.ceil(v.W / 400) + 1);
+    plan.buy = [
+      [`Brett ${t} mm, mind. ${num(ripW)} mm breit`, `${boards} × ${v.stock} mm`, 'Multiplex oder gerade Fichte/Kiefer, astarm'],
+      [`Platte ${t} mm für Module`, `ca. ${(plateArea * 1.25).toFixed(2).replace('.', ',')} m²`, 'inkl. 25 % Verschnitt'],
+      ...(v.board === 'ply' ? [['Sperrholz/OSB 12 mm', '1 Stk', `${num(v.W)} × ${num(v.Hw)} mm`], ['Spax 3,5 × 25', `${nRows * Math.ceil(v.W / 200)} Stk`, 'Leisten auf Trägerplatte (von hinten oder mit Leim)']] : []),
+      [v.board === 'ply' ? 'Dübel 8 mm + Schraube 6 × 60 (Trägerplatte)' : 'Dübel 8 mm + Schraube 5 × 70 (Wandleisten)', `${v.board === 'ply' ? Math.ceil(v.W / 400 + 1) * Math.ceil(v.Hw / 400 + 1) : wallPts} Stk`, 'max. 40 cm Abstand; bei Ständerwand in die Ständer'],
+      ['Spax 4 × 40', `ca. ${Math.ceil(modScrews * 1.15)} Stk`, 'für die Module'],
+      ...(hooks ? [['Schraubhaken / Garderobenhaken', `${hooks} Stk`, 'für Hakenleisten']] : []),
+      ['Holzleim (D3)', '1 Flasche', 'Modulleisten immer leimen + schrauben'],
+    ];
+    plan.steps = [
+      `<b>Leisten reißen:</b> Sägeblatt auf 45° stellen, Bretter (mind. ${mm(ripW)} breit) mittig längs auftrennen. Ergibt pro Brett zwei Leisten mit ${mm(ch)} Höhe. Schnittkanten leicht brechen.`,
+      `<b>Ablängen:</b> ${nRows * pieces} Wandleisten à ${mm(pieceLen)}${pieces > 1 ? ' (Stoß versetzt auf einen Dübelpunkt legen)' : ''} und die Modulleisten in Modulbreite.`,
+      `<b>Erste Leiste:</b> Oberste Wandleiste ${mm(top0)} unter Oberkante der Fläche mit der Wasserwaage ausrichten. <b>Schräge nach oben, zur Wand zeigend</b> – die Spitze ist vorne oben. Dübel max. 40 cm Abstand.`,
+      `<b>Weitere Leisten:</b> Abstandslehre (${mm(lehre)}) links und rechts auf die montierte Leiste stellen, nächste Leiste aufsetzen, festschrauben. So entsteht das ${mm(v.pitch)}-Raster ohne Messen.`,
+      `<b>Module bauen:</b> Rückwand zuschneiden, Modulleiste oben bündig auf die Rückseite leimen und schrauben – <b>Schräge nach unten, Spitze zur Wand</b>. Unten die Abstandsleiste (${mm(t)} stark) aufleimen, damit das Modul senkrecht hängt.`,
+      `<b>Ablagen &amp; Werkzeughalter:</b> Konsolen-Schablone aufkleben, Dreiecke aussägen, Boden bzw. Lochbrett auf die Rückwand-Oberkante schrauben, Konsolen darunter. Lochbrett vorher mit der Bohrschablone bohren (Forstnerbohrer, Opferbrett unterlegen).`,
+      `<b>Fächer:</b> Seiten, Boden und Front als offenen Kasten verleimen und von hinten durch die Rückwand verschrauben.`,
+      `<b>Einhängen:</b> Modul von oben schräg in die Wandleiste einhängen und nach unten absenken. Module lassen sich jederzeit umhängen.`,
+    ];
+
+    // Schablonen
+    const tpls = [];
+    Object.values(tplMap).forEach(x => {
+      if (x.holes) {
+        const pad = 10;
+        const off = (x.w - (x.n - 1) * v.holeSp) / 2;
+        const cy = pad + t + (x.d - t) / 2;
+        let b = S.rect(0, pad, x.w, x.d, 'fill="none" stroke="#000" stroke-width="0.3"');
+        b += S.line(0, pad + t, x.w, pad + t, 'stroke="#888" stroke-width="0.2" stroke-dasharray="2 1"');
+        b += S.text(2, pad - 3, `Lochbrett ${x.w} × ${x.d}: ${x.n} Löcher Ø ${v.holeD}, Abstand ${v.holeSp} – Rückseite oben, gestrichelt = Rückwand`, 'font-size="3"');
+        for (let i = 0; i < x.n; i++) { const hx = off + i * v.holeSp; b += holeMark(hx, cy, v.holeD); b += S.text(hx, cy + v.holeD / 2 + 5, num(hx), 'font-size="2.8" text-anchor="middle"'); }
+        tpls.push({ title: `Bohrschablone Lochbrett ${x.w}`, w: x.w + 2, h: x.d + pad + 4, body: b });
+      } else {
+        const p0 = 8;
+        let b = S.poly([[p0, p0], [p0 + x.a, p0], [p0, p0 + x.b]], 'fill="#f6ecd9" stroke="#000" stroke-width="0.35"');
+        b += S.text(p0 + 4, p0 + 6, `Konsole ${num(x.a)} × ${num(x.b)}`, 'font-size="3.5"');
+        b += S.text(p0 + 4, p0 + 11, 'oben = an den Boden', 'font-size="2.8"');
+        b += S.text(p0 + 4, p0 + 15, 'links = an die Rückwand', 'font-size="2.8"');
+        b += holeMark(p0 + t / 2 + 4, p0 + x.b * 0.35, 4) + holeMark(p0 + t / 2 + 4, p0 + x.b * 0.7, 4);
+        tpls.push({ title: `Konsolen-Schablone ${num(x.a)} × ${num(x.b)}`, w: x.a + 2 * p0, h: x.b + 2 * p0, body: b, hint: 'Schraublöcher = Vorbohrung für Schrauben von hinten durch die Rückwand' });
+      }
+    });
+    // Abstandslehre zur Kontrolle 1:1
+    let lb = S.rect(10, 10, 60, lehre, 'fill="#f6ecd9" stroke="#000" stroke-width="0.35"');
+    lb += S.text(14, 18, `Abstandslehre`, 'font-size="3.5"');
+    lb += S.text(14, 23, `${num(lehre)} mm hoch`, 'font-size="3.5"');
+    tpls.push({ title: 'Abstandslehre (Kontrollmaß)', w: 80, h: lehre + 20, body: lb, hint: 'Holzklotz auf dieses Maß ablängen' });
+    plan.templates = tpls;
+    return plan;
+  },
+};
+
+/* =====================================================================
+   TOOL 3: Schienen & Schablonen
+   ===================================================================== */
+const JIGS = [['rail', 'Führungsschiene Handkreissäge'], ['tsq', 'T-Anschlag 90° (Handkreissäge)'], ['holes32', 'Lochreihen-Bohrschablone 32 mm'], ['stop', 'Ablänglehre mit Anschlag']];
+const isJig = (...ids) => v => ids.includes(v.jig);
+const toolJigs = {
+  id: 'jigs',
+  title: 'Schienen & Schablonen',
+  fields: [
+    { g: 'Auswahl', id: 'jig', label: 'Was bauen?', type: 'select', def: 'rail', options: JIGS },
+    { g: 'Säge', id: 'a', label: 'Sägeblatt ↔ Sohlenkante', def: 110, unit: 'mm', help: 'Abstand Sägezähne bis Kante der Sohle, die am Anschlag läuft – selbst messen!', show: isJig('rail', 'tsq') },
+    { g: 'Säge', id: 'sole', label: 'Sohlenbreite gesamt', def: 160, unit: 'mm', show: isJig('rail', 'tsq') },
+    { g: 'Maße', id: 'L', label: 'Länge Schiene', def: 1400, unit: 'mm', show: isJig('rail') },
+    { g: 'Maße', id: 'Lt', label: 'Länge Führung', def: 650, unit: 'mm', help: 'max. Schnittlänge', show: isJig('tsq') },
+    { g: 'Maße', id: 'Lq', label: 'Länge Querleiste', def: 350, unit: 'mm', show: isJig('tsq') },
+    { g: 'Maße', id: 'f', label: 'Anschlagleiste Breite', def: 60, unit: 'mm', show: isJig('rail', 'tsq') },
+    { g: 'Maße', id: 'ft', label: 'Anschlagleiste Stärke', def: 12, unit: 'mm', help: 'nicht höher als die Motorhaube erlaubt', show: isJig('rail', 'tsq') },
+    { g: 'Maße', id: 'bt', label: 'Grundplatte Stärke', def: 6, unit: 'mm', show: isJig('rail', 'tsq') },
+    { g: 'Lochreihe', id: 'hl', label: 'Länge Schablone', def: 600, unit: 'mm', show: isJig('holes32') },
+    { g: 'Lochreihe', id: 'edge', label: 'Abstand zur Vorderkante', def: 37, unit: 'mm', show: isJig('holes32') },
+    { g: 'Lochreihe', id: 'first', label: 'Erstes Loch ab Ende', def: 64, unit: 'mm', show: isJig('holes32') },
+    { g: 'Lochreihe', id: 'raster', label: 'Raster', def: 32, unit: 'mm', show: isJig('holes32') },
+    { g: 'Lochreihe', id: 'hd', label: 'Loch-Ø', def: 5, unit: 'mm', show: isJig('holes32') },
+    { g: 'Lochreihe', id: 'depth', label: 'Bohrtiefe', def: 12, unit: 'mm', show: isJig('holes32') },
+    { g: 'Ablänglehre', id: 'Lz', label: 'Ziellänge', def: 445, unit: 'mm', show: isJig('stop') },
+    { g: 'Ablänglehre', id: 'qty', label: 'Stückzahl', def: 24, unit: 'Stk', show: isJig('stop') },
+  ],
+  compute(v) {
+    const msgs = [], plan = { title: JIGS.find(j => j[0] === v.jig)[1], msgs };
+    if (v.jig === 'rail' || v.jig === 'tsq') {
+      const len = v.jig === 'rail' ? v.L : v.Lt;
+      if (v.a >= v.sole) msgs.push(['err', 'Abstand Sägeblatt ↔ Sohlenkante muss kleiner als die Sohlenbreite sein.']);
+      const over = 25;
+      const bw = v.f + v.a + over;
+      const scr = STD_SCREW_LEN.filter(l => l <= v.bt + v.ft - 2).pop() || 12;
+      const nScrew = Math.ceil((len - 50) / 150) + 1;
+      const parts = [
+        { name: 'Grundplatte', qty: 1, l: len, b: bw, t: v.bt, mat: 'MDF/HDF oder Sperrholz', note: `wird mit der Säge auf ${mm(v.f + v.a)} besäumt` },
+        { name: 'Anschlagleiste', qty: 1, l: len, b: v.f, t: v.ft, mat: 'Multiplex', note: 'Fabrikkante = Anschlagkante, muss absolut gerade sein' },
+      ];
+      if (v.jig === 'tsq') parts.push({ name: 'Querleiste (T-Anschlag)', qty: 1, l: v.Lq, b: 60, t: 18, mat: 'Multiplex', note: 'wird unter die Grundplatte geschraubt, exakt 90°' });
+      plan.parts = parts;
+      plan.kpis = [['Grundplatte (roh)', `${num(len)} × ${num(bw)}`], ['Nach Besäumen', mm(v.f + v.a)], ['Schrauben', `${nScrew} × 3,5×${scr}`]];
+      const fs = len / 30;
+      const sc = Math.min(1, 600 / len);
+      let g = S.rect(0, 0, len, bw, 'class="wood"');
+      g += S.rect(0, bw - (bw - v.f - v.a), len, bw - v.f - v.a, 'fill="#f5d6d6" stroke="#8a1c1c" stroke-dasharray="6 4"');
+      g += S.rect(0, 0, len, v.f, 'class="wood2"');
+      for (let i = 0; i < nScrew; i++) g += S.circle(25 + i * (len - 50) / Math.max(1, nScrew - 1), v.f / 2, Math.max(3, v.f / 12), 'class="hole"');
+      const qy = Math.min(0, (bw - v.Lq) / 2);
+      if (v.jig === 'tsq') { g += S.rect(0, (bw - v.Lq) / 2, 60, v.Lq, 'class="ghost"'); g += S.text(64, (bw - v.Lq) / 2 + fs * 0.8, 'Querleiste (unten)', `font-size="${fs * 0.6}" class="lbl"`); }
+      g += S.text(len / 2, v.f / 2 + fs * 0.3, 'Anschlagleiste', `font-size="${fs * 0.8}" text-anchor="middle"`);
+      g += S.text(len / 2, v.f + v.a / 2 + fs * 0.3, 'hier läuft die Sohle', `font-size="${fs * 0.8}" text-anchor="middle" class="lbl"`);
+      g += S.text(len / 2, bw - (bw - v.f - v.a) / 2 + fs * 0.3, 'wird abgesägt → Kante = Schnittlinie', `font-size="${fs * 0.7}" text-anchor="middle" fill="#8a1c1c"`);
+      g += dimV(0, v.f, len + fs * 0.9, num(v.f), fs * 0.8) + dimV(v.f, v.f + v.a, len + fs * 0.9, num(v.a), fs * 0.8);
+      g += dimH(0, len, -fs * 0.6, num(len), fs);
+      plan.drawings = [drawing(-fs * 2.5, qy - fs * 2, len + fs * 4, bw - 2 * qy + fs * 3, g, 'Draufsicht – rot gestrichelt wird beim ersten Schnitt abgesägt')];
+      plan.jigs = [['Winkel/Anschlagwinkel', '–', v.jig === 'tsq' ? 'Querleiste exakt 90° zur Anschlagleiste; Kontrolle 3-4-5: 300 / 400 / 500 mm' : 'Anschlagleiste parallel zur Plattenkante ausrichten']];
+      plan.buy = [
+        [`MDF/Sperrholz ${v.bt} mm`, '1 Streifen', `${num(len)} × ${num(bw)} mm`],
+        [`Multiplex ${v.ft} mm`, '1 Streifen', `${num(len)} × ${num(v.f)} mm – Fabrikkante verwenden`],
+        [`Spax Senkkopf 3,5 × ${scr}`, `${nScrew + (v.jig === 'tsq' ? 4 : 0)} Stk`, 'von unten, versenkt'],
+        ['Holzleim', '–', ''],
+        ['Antirutsch-Band oder Schleifpapier-Streifen', 'optional', 'unter die Grundplatte'],
+        ['2 Schraubzwingen', '–', 'zum Fixieren beim Sägen'],
+      ];
+      plan.steps = [
+        `<b>Abstand messen:</b> Säge auf 0° und Schnitttiefe max. Lineal an die Sohlenkante (die Seite, die am Anschlag laufen soll) legen und bis zur Zahnspitze messen. Ergebnis ins Feld „Sägeblatt ↔ Sohlenkante“ (aktuell ${mm(v.a)}).`,
+        `<b>Zuschneiden:</b> Grundplatte ${mm(len)} × ${mm(bw)} (${mm(over)} Übermaß), Anschlagleiste ${mm(len)} × ${mm(v.f)} mit gerader Fabrikkante.`,
+        `<b>Anschlag aufleimen:</b> Anschlagleiste bündig an der hinteren Kante der Grundplatte aufleimen, Fabrikkante zeigt zur Säge. Von unten ${nScrew} Schrauben 3,5 × ${scr} alle 15 cm, gut versenken – Schraubenköpfe dürfen nicht überstehen.`,
+        v.jig === 'tsq' ? `<b>Querleiste:</b> Querleiste (${mm(v.Lq)}) am Anfang unter die Grundplatte schrauben, mit dem Winkel exakt 90° zur Anschlagleiste. Erst 1 Schraube, Winkel prüfen (3-4-5-Methode), dann restliche Schrauben.` : `<b>Aushärten lassen:</b> Leim mindestens 1 Stunde trocknen lassen, Zwingen alle 20 cm.`,
+        `<b>Besäumen:</b> Schiene auf eine Opferplatte spannen, Säge an der Anschlagleiste entlangführen und das Übermaß abschneiden. Die neue Kante ist ab jetzt <b>exakt die Schnittlinie</b>.`,
+        `<b>Benutzen:</b> Kante der Grundplatte auf den Anriss legen, festzwingen, sägen. Nur mit dieser Säge und diesem Sägeblatt verwenden (andere Blattstärke = andere Kante). Schiene beschriften!`,
+      ];
+      // 1:1-Schablone Kopfstück (erste 170 mm) mit Schraubpositionen
+      const tl = Math.min(len, 170);
+      let b = S.rect(0, 10, tl, bw, 'fill="none" stroke="#000" stroke-width="0.3"');
+      b += S.rect(0, 10, tl, v.f, 'fill="#eee" stroke="#000" stroke-width="0.3"');
+      b += S.text(2, 7, 'Kopfstück 1:1 – Unterseite der Grundplatte, Anschlag oben', 'font-size="3"');
+      for (let i = 0; i < nScrew; i++) { const x = 25 + i * (len - 50) / Math.max(1, nScrew - 1); if (x <= tl) b += holeMark(x, 10 + v.f / 2, 3.5); }
+      b += S.line(0, 10 + v.f + v.a, tl, 10 + v.f + v.a, 'stroke="#c00" stroke-width="0.4" stroke-dasharray="3 1.5"');
+      b += S.text(2, 10 + v.f + v.a - 2, `Schnittlinie (${num(v.f + v.a)} ab Hinterkante)`, 'font-size="3" fill="#c00"');
+      plan.templates = bw + 20 <= 240 ? [{ title: 'Kopfstück Führungsschiene', w: tl, h: bw + 14, body: b }] : [];
+    } else if (v.jig === 'holes32') {
+      const n = Math.max(1, Math.floor((v.hl - 2 * v.first) / v.raster) + 1);
+      const W = v.edge + 23;
+      plan.kpis = [['Löcher', String(n)], ['Raster', mm(v.raster)], ['Bohrtiefe', mm(v.depth)]];
+      plan.parts = [
+        { name: 'Schablonenleiste', qty: 1, l: v.hl, b: W, t: 18, mat: 'Multiplex', note: 'Löcher mit Ständerbohrmaschine exakt senkrecht' },
+        { name: 'Anschlagleiste', qty: 1, l: v.hl, b: 30, t: 18, mat: 'Multiplex', note: 'unten an die Vorderkante, bildet den Anschlag' },
+      ];
+      plan.buy = [[`Holzbohrer Ø ${v.hd} mit Zentrierspitze`, '1', ''], ['Tiefenstopp-Ring', '1', `auf ${mm(v.depth + 18)} (Bohrtiefe + Schablonenstärke)`], ['Bodenträger', 'nach Bedarf', `Ø ${v.hd} mm`]];
+      plan.steps = [
+        `<b>Schablone drucken</b> und Kontrollmaß prüfen, auf die Multiplex-Leiste kleben.`,
+        `<b>Bohren:</b> Mit Ständerbohrmaschine ${n} Löcher Ø ${v.hd} durch die Leiste – exakt senkrecht, sonst sitzen die Bodenträger schief.`,
+        `<b>Anschlag:</b> Anschlagleiste unten an die Kante leimen, die zur Vorderkante des Werkstücks zeigt (Lochmitte ${mm(v.edge)} vom Anschlag).`,
+        `<b>Benutzen:</b> Schablone an Vorder- bzw. Hinterkante der Seitenwand anlegen, am unteren Ende bündig. Für die zweite Lochreihe Schablone wenden und von <b>derselben</b> Unterkante aus anlegen – nicht nachmessen.`,
+        `Bohrtiefe ${mm(v.depth)} mit Tiefenstopp – bei ${18} mm Platte nicht tiefer als 13 mm!`,
+      ];
+      let b = S.rect(0, 10, v.hl, W, 'fill="none" stroke="#000" stroke-width="0.3"');
+      b += S.line(0, 10 + W, v.hl, 10 + W, 'stroke="#000" stroke-width="0.9"');
+      b += S.text(2, 7, `Lochreihe ${v.raster} mm – dicke Linie = Anschlag/Vorderkante, Löcher Ø ${v.hd}, ${num(v.edge)} mm von der Kante`, 'font-size="3"');
+      for (let i = 0; i < n; i++) { const x = v.first + i * v.raster; b += holeMark(x, 10 + W - v.edge, v.hd); b += S.text(x, 10 + W - v.edge - v.hd / 2 - 4, num(x), 'font-size="2.6" text-anchor="middle"'); }
+      plan.templates = [{ title: 'Lochreihen-Schablone 32 mm', w: v.hl + 2, h: W + 14, body: b, hint: 'untere Kante = Ende der Seitenwand' }];
+      const fs = v.hl / 30;
+      let g = S.rect(0, 0, v.hl, W, 'class="wood"') + S.rect(0, W, v.hl, 18, 'class="wood2"');
+      for (let i = 0; i < n; i++) g += S.circle(v.first + i * v.raster, W - v.edge, v.hd / 2 + 1, 'class="hole"');
+      g += dimH(v.first, v.first + v.raster, -fs * 0.6, num(v.raster), fs * 0.8) + dimV(W - v.edge, W, v.hl + fs, num(v.edge), fs * 0.8);
+      plan.drawings = [drawing(-fs, -fs * 2, v.hl + fs * 3, W + 18 + fs * 3, g, 'Draufsicht Schablone mit Anschlagleiste (dunkel)')];
+    } else if (v.jig === 'stop') {
+      const len = v.Lz + 300;
+      plan.kpis = [['Anschlag bei', mm(v.Lz)], ['Stück', String(v.qty)]];
+      plan.parts = [
+        { name: 'Grundleiste', qty: 1, l: len, b: 80, t: 18, mat: 'Multiplex', note: 'wird an den Sägenanschlag gezwungen' },
+        { name: 'Anschlagklotz', qty: 1, l: 60, b: 40, t: 40, mat: 'Hartholz', note: 'unten 5 mm Fase (Späne-Nut), sonst stimmt das Maß nicht' },
+      ];
+      plan.buy = [['Spax 4 × 50', '2 Stk', 'Klotz festschrauben'], ['Schraubzwinge', '2', '']];
+      plan.steps = [
+        `<b>Probeschnitt:</b> Grundleiste an den Anschlag der Kapp-/Gehrungssäge zwingen und einmal durchsägen – die Schnittkante ist die Nulllinie.`,
+        `<b>Anschlag setzen:</b> Ab Schnittkante genau ${mm(v.Lz)} messen (Sägeblatt-Zahn innen), Anschlagklotz mit Leim + 2 Schrauben setzen. Unterkante anfasen, damit Späne den Anschlag nicht verfälschen.`,
+        `<b>Testen:</b> Ein Probestück schneiden und nachmessen. Abweichung? Klotz lösen und korrigieren – nicht beim Werkstück nachbessern.`,
+        `<b>Serie:</b> ${v.qty} Stück: Werkstück an den Klotz schieben, sägen. Erst ausrichten, dann Säge einschalten.`,
+      ];
+      const fs = len / 28;
+      let g = S.rect(0, 0, len, 80, 'class="wood"') + S.rect(v.Lz, -40, 60, 40 + 80, 'class="wood2"');
+      g += S.line(0, -60, 0, 120, 'stroke="#c2410c" stroke-width="2" stroke-dasharray="6 4"');
+      g += S.text(4, -46, 'Sägeblatt', `font-size="${fs * 0.7}" class="lbl"`);
+      g += dimH(0, v.Lz, 80 + fs * 1.5, num(v.Lz), fs);
+      plan.drawings = [drawing(-fs, -fs * 3, len + fs * 2, 80 + fs * 5, g, 'Draufsicht: Abstand Sägeblatt → Anschlagklotz')];
+      plan.templates = [];
+    }
+    return plan;
+  },
+};
+
+/* =====================================================================
+   App-Rahmen: Formular, Speicherung, Tabs
+   ===================================================================== */
+const TOOLS = [toolSamla, toolCleat, toolJigs];
+const STORE = 'bauplan-app-v1';
+let state = {};
+try { state = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { state = {}; }
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} };
+
+function values(tool) {
+  const st = state[tool.id] || (state[tool.id] = {});
+  const v = {};
+  tool.fields.forEach(f => {
+    let x = st[f.id];
+    if (x === undefined) x = f.type === 'modules' ? JSON.parse(JSON.stringify(f.def)) : f.def;
+    if (!f.type || f.type === 'number') x = Number(x) || 0;
+    v[f.id] = x;
+  });
+  return v;
+}
+
+function buildForm(tool, el) {
+  const v = values(tool);
+  const groups = {};
+  tool.fields.forEach(f => { (groups[f.g] = groups[f.g] || []).push(f); });
+  let h = `<h2>${esc(tool.title)}</h2>`;
+  for (const [g, fs] of Object.entries(groups)) {
+    const vis = fs.filter(f => !f.show || f.show(v));
+    if (!vis.length) continue;
+    h += `<fieldset><legend>${esc(g)}</legend>`;
+    vis.forEach(f => {
+      if (f.type === 'modules') {
+        h += `<div class="modrow modhead"><span>Typ</span><span>Stk</span><span>Breite</span><span>Höhe</span><span>Tiefe</span><span></span></div>`;
+        v[f.id].forEach((m, i) => {
+          h += `<div class="modrow" data-i="${i}"><select data-m="type">${Object.entries(MODS).map(([k, d]) => `<option value="${k}"${k === m.type ? ' selected' : ''}>${esc(d.name)}</option>`).join('')}</select>` +
+            ['qty', 'w', 'h', 'd'].map(k => `<input type="number" inputmode="numeric" data-m="${k}" value="${m[k]}">`).join('') +
+            `<button data-del="${i}" title="Entfernen">✕</button></div>`;
+        });
+        h += `<button class="btn sec small" data-add="1">+ Modul</button>`;
+        return;
+      }
+      h += `<div class="field"><label for="${tool.id}-${f.id}">${esc(f.label)}${f.help ? `<small>${esc(f.help)}</small>` : ''}</label><div class="ctl">`;
+      if (f.type === 'select') h += `<select id="${tool.id}-${f.id}" data-f="${f.id}">${f.options.map(o => `<option value="${o[0]}"${String(v[f.id]) === String(o[0]) ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
+      else h += `<input id="${tool.id}-${f.id}" type="number" inputmode="decimal" step="any" data-f="${f.id}" value="${v[f.id]}"><span class="unit">${esc(f.unit || '')}</span>`;
+      h += `</div></div>`;
+    });
+    h += `</fieldset>`;
+  }
+  h += `<div class="actions"><button class="btn" data-print="1">Plan drucken / als PDF</button><button class="btn sec" data-reset="1">Standardwerte</button></div>`;
+  h += `<p class="note">Eingaben werden auf diesem Gerät gespeichert.</p>`;
+  el.innerHTML = h;
+}
+
+let timer = null;
+function recalc(tool, root) {
+  const out = root.querySelector('.out');
+  try { out.innerHTML = renderPlan(tool.compute(values(tool))); }
+  catch (e) { out.innerHTML = `<div class="msg err">Fehler bei der Berechnung: ${esc(e.message)}</div>`; console.error(e); }
+}
+
+function mountTool(tool) {
+  const root = document.createElement('section');
+  root.className = 'tool';
+  root.id = 'tool-' + tool.id;
+  root.innerHTML = `<div class="card inputs"></div><div class="card out"></div>`;
+  const form = root.querySelector('.inputs');
+  buildForm(tool, form);
+  const st = () => state[tool.id] || (state[tool.id] = {});
+  const setField = (id, val) => { st()[id] = val; };
+  form.addEventListener('input', e => {
+    const el = e.target;
+    if (el.dataset.f) {
+      const f = tool.fields.find(x => x.id === el.dataset.f);
+      const val = f.type === 'select' ? el.value : el.value.replace(',', '.');
+      setField(f.id, val);
+      if (f.onchange) { f.onchange(val, setField); }
+      if (f.type === 'select') { buildForm(tool, form); }
+    } else if (el.dataset.m) {
+      const i = +el.closest('.modrow').dataset.i;
+      const mods = values(tool).modules;
+      const k = el.dataset.m;
+      mods[i][k] = k === 'type' ? el.value : Number(el.value) || 0;
+      if (k === 'type') Object.assign(mods[i], MODS[el.value].def);
+      st().modules = mods;
+      if (k === 'type') buildForm(tool, form);
+    }
+    save();
+    clearTimeout(timer);
+    timer = setTimeout(() => recalc(tool, root), 150);
+  });
+  form.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.print) { window.print(); return; }
+    if (b.dataset.reset) { if (confirm('Alle Eingaben dieses Tools auf Standard zurücksetzen?')) { state[tool.id] = {}; save(); buildForm(tool, form); recalc(tool, root); } return; }
+    if (b.dataset.add) { const mods = values(tool).modules; mods.push({ type: 'ablage', qty: 1, ...MODS.ablage.def }); st().modules = mods; }
+    if (b.dataset.del != null) { const mods = values(tool).modules; mods.splice(+b.dataset.del, 1); st().modules = mods; }
+    save(); buildForm(tool, form); recalc(tool, root);
+  });
+  recalc(tool, root);
+  return root;
+}
+
+function init() {
+  const main = document.getElementById('main'), tabs = document.getElementById('tabs');
+  TOOLS.forEach(t => {
+    main.appendChild(mountTool(t));
+    const b = document.createElement('button');
+    b.textContent = t.title; b.dataset.tool = t.id;
+    b.onclick = () => activate(t.id);
+    tabs.appendChild(b);
+  });
+  activate(state.active || TOOLS[0].id);
+}
+function activate(id) {
+  state.active = id; save();
+  document.querySelectorAll('.tool').forEach(s => s.classList.toggle('active', s.id === 'tool-' + id));
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tool === id));
+  window.scrollTo(0, 0);
+}
+init();
+</script>
+</body>
+</html>
