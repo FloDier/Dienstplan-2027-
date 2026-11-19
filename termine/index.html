@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Stalltermine">
+<meta name="apple-mobile-web-app-title" content="Franzis Hufpflege">
 <meta name="theme-color" content="#14532d">
-<title>Stalltermine</title>
+<title>Franzi's Hufpflege</title>
 <style>
   :root {
     --bg: #f5f5f0; --card: #fff; --text: #1c1917; --muted: #78716c; --line: #e7e5e4;
@@ -104,7 +104,7 @@
 </style>
 </head>
 <body>
-<header class="top"><h1 id="title">Stalltermine</h1><small id="subtitle"></small></header>
+<header class="top"><h1 id="title">Franzi's Hufpflege</h1><small id="subtitle"></small></header>
 <nav class="tabs" id="tabs"></nav>
 <main id="app"></main>
 
@@ -247,7 +247,7 @@ function mountTimes(el, starts, duration, selected, onSelect) {
    ===================================================================== */
 const KEY = 'stalltermine-v1';
 const DEFAULT_SETTINGS = {
-  name: '', phone: '', mail: '',
+  name: "Franzi's Hufpflege", phone: '', mail: '',
   work: [null, [480, 1020], [480, 1020], [480, 1020], [480, 1020], [480, 1020], [480, 720]], // So..Sa
   raster: 30, minPerHorse: 45, buffer: 30, horizonWeeks: 8, blocked: [], lastBackup: null
 };
@@ -314,7 +314,7 @@ function renderTabs() {
   $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); window.scrollTo(0, 0); } };
 }
 function render() {
-  $('#title').textContent = data.settings.name || 'Stalltermine';
+  $('#title').textContent = data.settings.name || "Franzi's Hufpflege";
   $('#subtitle').textContent = 'Kunden & Terminplanung';
   renderTabs();
   $('#app').onchange = null;
@@ -627,7 +627,7 @@ function renderEinstellungen() {
     }
     s.minPerHorse = Math.max(5, Number($('#sMph').value) || 45); s.buffer = Math.max(0, Number($('#sBuf').value) || 0);
     s.raster = Number($('#sRaster').value); s.horizonWeeks = Math.min(26, Math.max(1, Number($('#sWeeks').value) || 8));
-    save(); $('#title').textContent = s.name || 'Stalltermine';
+    save(); $('#title').textContent = s.name || "Franzi's Hufpflege";
   };
   $('#app').onchange = e => { if (e.target.id !== 'bImport' && e.target.id !== 'bFrom' && e.target.id !== 'bTo') { saveSettings(); toast('Gespeichert'); } };
   $('#bAdd').onclick = () => {

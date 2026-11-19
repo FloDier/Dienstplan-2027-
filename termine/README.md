@@ -1,4 +1,4 @@
-# Stalltermine
+# Franzi's Hufpflege – Kunden & Termine
 
 Web-App für Kundenverwaltung (Stall, Besitzer, Pferde, Anfahrt) und Terminbuchung mit Kunden-Bereich per QR-Code.
 Läuft komplett im Browser, ohne Server, ohne Konto. Daten liegen lokal im Browser-Speicher des Geräts.
